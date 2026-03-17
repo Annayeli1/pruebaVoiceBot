@@ -1,50 +1,57 @@
 <template>
   <div class="container">
     <div class="content">
-      <!-- Tu contenido -->
       <p>Mensajes o contenido aquí...</p>
+
       <div class="audio-bar" v-if="audioUrl">
-        <audio v-if="audioUrl" :src="audioUrl" controls></audio>
+        <audio :src="audioUrl" controls></audio>
       </div>
     </div>
 
+    <div v-if="grabando" class="recording-indicator">
+      <span class="dot"></span>
+      Grabando...
+    </div>
+
+    <!-- 🔘 Botones -->
     <div class="footer">
-      <button class="btn" @click="iniciarGrabacion">Iniciar🎤</button>
-      <button class="btn" @click="detenerGrabacion">Detener</button>
+      <button class="btn" @click="iniciarGrabacion">🎤 Iniciar</button>
+      <button class="btn stop" @click="detenerGrabacion">⏹ Detener</button>
     </div>
   </div>
 </template>
-<script>
-export default {
-  data() {
-    return {
-      mediaRecorder: null,
-      audioChunks: [],
-      audioUrl: null,
-    };
-  },
-  methods: {
-    async iniciarGrabacion() {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this.mediaRecorder = new MediaRecorder(stream);
 
-      this.mediaRecorder.ondataavailable = (e) => {
-        this.audioChunks.push(e.data);
-      };
+<script setup>
+import { ref } from "vue";
 
-      this.mediaRecorder.onstop = () => {
-        const blob = new Blob(this.audioChunks, { type: "audio/wav" });
-        this.audioUrl = URL.createObjectURL(blob);
-        this.audioChunks = [];
-      };
+const mediaRecorder = ref(null);
+const audioChunks = ref([]);
+const audioUrl = ref(null);
+const grabando = ref(false);
 
-      this.mediaRecorder.start();
-    },
-    detenerGrabacion() {
-      if (this.mediaRecorder) {
-        this.mediaRecorder.stop();
-      }
-    },
-  },
+const iniciarGrabacion = async () => {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorder.value = new MediaRecorder(stream);
+
+  audioChunks.value = [];
+  grabando.value = true;
+
+  mediaRecorder.value.ondataavailable = (e) => {
+    audioChunks.value.push(e.data);
+  };
+
+  mediaRecorder.value.onstop = () => {
+    const blob = new Blob(audioChunks.value, { type: "audio/wav" });
+    audioUrl.value = URL.createObjectURL(blob);
+    grabando.value = false;
+  };
+
+  mediaRecorder.value.start();
+};
+
+const detenerGrabacion = () => {
+  if (mediaRecorder.value) {
+    mediaRecorder.value.stop();
+  }
 };
 </script>
