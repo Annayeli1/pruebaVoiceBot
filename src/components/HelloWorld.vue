@@ -1,88 +1,70 @@
 <template>
-  <div class="container">
-    <div class="content">
-      <p>Mensajes...</p>
-
-      <div class="audio-bar" v-if="audioUrl">
-        <audio :src="audioUrl" controls></audio>
-      </div>
-    </div>
-
-    <div v-if="grabando" class="recording-indicator">
-      <span class="dot"></span>
-      🎤 {{ tiempoFormateado }}
-    </div>
-
+  <div>
     <div class="footer">
-      <button class="btn" @click="iniciarGrabacion">🎤 Iniciar</button>
-      <button class="btn stop" @click="detenerGrabacion">⏹ Detener</button>
+      <button class="btn" @click="iniciarGrabacion">🎤 Hablar</button>
+    </div>
+
+    <div v-for="(msg, i) in mensajes" :key="i">
+      <b>{{ msg.tipo === "usuario" ? "Tú:" : "Bot:" }}</b>
+      {{ msg.texto }}
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref } from "vue";
 
-const mediaRecorder = ref(null);
-const audioChunks = ref([]);
-const audioUrl = ref(null);
-const grabando = ref(false);
+const mensajes = ref([]);
+const escuchando = ref(false);
 
-const segundos = ref(0);
-let intervalo = null;
+let recognition;
 
-const tiempoFormateado = computed(() => {
-  const min = String(Math.floor(segundos.value / 60)).padStart(2, "0");
-  const sec = String(segundos.value % 60).padStart(2, "0");
-  return `${min}:${sec}`;
-});
+const iniciarGrabacion = () => {
+  recognition = new webkitSpeechRecognition();
+  recognition.lang = "es-MX";
+  recognition.continuous = false;
+  recognition.interimResults = false;
 
-const iniciarGrabacion = async () => {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  mediaRecorder.value = new MediaRecorder(stream);
+  escuchando.value = true;
 
-  audioChunks.value = [];
-  grabando.value = true;
-  segundos.value = 0;
+  recognition.onresult = async (event) => {
+    const texto = event.results[0][0].transcript;
 
-  intervalo = setInterval(() => {
-    segundos.value++;
-  }, 1000);
+    mensajes.value.push({
+      tipo: "usuario",
+      texto,
+    });
 
-  mediaRecorder.value.ondataavailable = (e) => {
-    audioChunks.value.push(e.data);
+    const response = await fetch("http://localhost:3000/mensaje", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ mensaje: texto }),
+    });
+
+    const data = await response.json();
+
+    mensajes.value.push({
+      tipo: "bot",
+      texto: data.botText,
+    });
+
+    hablar(data.botText);
   };
 
-  mediaRecorder.value.onstop = async () => {
-    console.log("Enviando archivo...");
-    const blob = new Blob(audioChunks.value, { type: "audio/wav" });
-    audioUrl.value = URL.createObjectURL(blob);
-    grabando.value = false;
-
-    clearInterval(intervalo);
-
-    const formData = new FormData();
-    formData.append("audio", blob, "grabacion.wav");
-
-    try {
-      const response = await fetch("http://localhost:3000/mensaje", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-      console.log("Respuesta del servidor:", data);
-    } catch (error) {
-      console.error("Error enviando audio:", error);
-    }
+  recognition.onend = () => {
+    escuchando.value = false;
   };
 
-  mediaRecorder.value.start();
+  recognition.start();
 };
 
-const detenerGrabacion = () => {
-  if (mediaRecorder.value) {
-    mediaRecorder.value.stop();
-  }
+const hablar = (texto) => {
+  const speech = new SpeechSynthesisUtterance(texto);
+  speech.lang = "es-MX";
+  speech.rate = 1;
+
+  window.speechSynthesis.speak(speech);
 };
 </script>
