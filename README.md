@@ -31,10 +31,9 @@ Instalación
 
 \*Clonar el repositorio para Frontend:
 
-Git: https://github.com/Annayeli1/pruebaVoiceBot.git
-
 ```bash
-git clone pruebaVoiceBot
+git https://github.com/Annayeli1/pruebaVoiceBot.git
+
 cd pruebaVoiceBot
 ```
 
@@ -42,10 +41,8 @@ cd pruebaVoiceBot
 
 \*Clonar el repositorio para Backend:
 
-Git:https://github.com/Annayeli1/voiceServer.git
-
 ```bash
-git clone voiceServer
+git clone https://github.com/Annayeli1/voiceServer.git
 cd voiceServer
 ```
 
