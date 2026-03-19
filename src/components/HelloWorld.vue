@@ -1,12 +1,21 @@
 <template>
-  <div>
-    <div class="footer">
-      <button class="btn" @click="iniciarGrabacion">🎤 Hablar</button>
-    </div>
+  <div class="content">
+    <div class="container">
+      <div class="footer">
+        <button class="btn" @click="iniciarGrabacion" :disabled="escuchando">
+          🎤 Hablar
+        </button>
 
-    <div v-for="(msg, i) in mensajes" :key="i">
-      <b>{{ msg.tipo === "usuario" ? "Tú:" : "Bot:" }}</b>
-      {{ msg.texto }}
+        <div v-if="escuchando" class="recording-indicator">
+          <span class="dot"></span>
+          Escuchando...
+        </div>
+      </div>
+
+      <div v-for="(msg, i) in mensajes" :key="i">
+        <b>{{ msg.tipo === "usuario" ? "Tú:" : "Bot:" }}</b>
+        {{ msg.texto }}
+      </div>
     </div>
   </div>
 </template>
@@ -21,11 +30,12 @@ let recognition;
 
 const iniciarGrabacion = () => {
   recognition = new webkitSpeechRecognition();
+
+  escuchando.value = true;
+
   recognition.lang = "es-MX";
   recognition.continuous = false;
   recognition.interimResults = false;
-
-  escuchando.value = true;
 
   recognition.onresult = async (event) => {
     const texto = event.results[0][0].transcript;
