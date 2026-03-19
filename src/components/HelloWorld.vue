@@ -3,7 +3,7 @@
     <div class="container">
       <div class="footer">
         <button class="btn" @click="iniciarGrabacion" :disabled="escuchando">
-          🎤 Hablar
+          🎙️ Iniciar
         </button>
 
         <div v-if="escuchando" class="recording-indicator">
@@ -13,7 +13,7 @@
       </div>
 
       <div v-for="(msg, i) in mensajes" :key="i">
-        <b>{{ msg.tipo === "usuario" ? "Tú:" : "Bot:" }}</b>
+        <b>{{ msg.tipo === "usuario" ? "Tú:" : "Gemini:" }}</b>
         {{ msg.texto }}
       </div>
     </div>
